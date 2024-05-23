@@ -1,9 +1,11 @@
 Sub FormatData()
-
     Dim wsRaw As Worksheet
     Dim wsFormatted As Worksheet
-    Dim lastRow As Long, i As Long
+    Dim lastRow As Long, i As Long, j As Long
     Dim colorValue As String
+    Dim incidentNum As String
+    Dim cellValue As Variant
+    Dim isMerged As Boolean
     
     ' Set the worksheet variables
     Set wsRaw = ThisWorkbook.Sheets("Raw")
@@ -46,18 +48,30 @@ Sub FormatData()
     End With
     
     ' Merge cells in columns A, B, and C for the same incidents
-    On Error Resume Next ' Enable error handling
-    
     For i = 2 To lastRow
-        If wsFormatted.Cells(i, 1).Value = wsFormatted.Cells(i + 1, 1).Value Then
-            wsFormatted.Range(wsFormatted.Cells(i, 1), wsFormatted.Cells(i + 1, 1)).Merge
-            wsFormatted.Range(wsFormatted.Cells(i, 2), wsFormatted.Cells(i + 1, 2)).Merge
-            wsFormatted.Range(wsFormatted.Cells(i, 3), wsFormatted.Cells(i + 1, 3)).Merge
-            wsFormatted.Range(wsFormatted.Cells(i, 1), wsFormatted.Cells(i + 1, 3)).HorizontalAlignment = xlCenter
+        incidentNum = wsFormatted.Cells(i, 1).Value
+        If incidentNum <> "" Then
+            j = i
+            isMerged = False
+            
+            Do While wsFormatted.Cells(j + 1, 1).Value = incidentNum
+                j = j + 1
+                isMerged = True
+            Loop
+            
+            If isMerged Then
+                ' Handle the merge warning
+                On Error GoTo MergeErrorHandler
+                wsFormatted.Range(wsFormatted.Cells(i, 1), wsFormatted.Cells(j, 1)).Merge
+                wsFormatted.Range(wsFormatted.Cells(i, 2), wsFormatted.Cells(j, 2)).Merge
+                wsFormatted.Range(wsFormatted.Cells(i, 3), wsFormatted.Cells(j, 3)).Merge
+                wsFormatted.Range(wsFormatted.Cells(i, 1), wsFormatted.Cells(j, 3)).HorizontalAlignment = xlCenter
+                On Error GoTo 0
+            End If
+            
+            i = j
         End If
     Next i
-    
-    On Error GoTo 0 ' Disable error handling
     
     ' Sort by Incident Date (column B) after merging cells
     With wsFormatted.Sort
@@ -69,5 +83,10 @@ Sub FormatData()
     End With
     
     MsgBox "Formatting complete.", vbInformation
+    Exit Sub
+
+MergeErrorHandler:
+    MsgBox "Merging cells only keeps the upper-left value and discards other values. Please ensure data integrity.", vbExclamation
+    Resume Next
 
 End Sub
