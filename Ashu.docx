@@ -1,109 +1,42 @@
-Attribute VB_Name = "Module1"
-
-Sub FormatGTSSheet()
-    StartDeleteCopyPaste
-    EvaluateRagStatus
-    Sorting
-    MergeSameIncidents
-    Range("A1").Select
-End Sub
-
-Sub StartDeleteCopyPaste()
-    With Sheets("Formatted")
-        .Cells.Clear
-        Sheets("Raw").Cells.Copy .Range("A1")
-        .Columns("D:D").Delete Shift:=xlToLeft
-        DateConvert
-    End With
-End Sub
-
-Sub DateConvert()
-    Dim ws As Worksheet
-    Set ws = Sheets("Formatted")
-    Dim lastRow As Long
-    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
-
-    ws.Range("N1:Q1").Value = Array("Idate", "AID", "ACD", "Status")
-
-    With ws.Range("N2:N" & lastRow)
-        .FormulaR1C1 = "=DATE(YEAR(RC[-15]), MONTH(RC[-14]), DAY(RC[-13]))"
-        .Value = .Value
-    End With
-
-    ws.Range("O2:O" & lastRow).FormulaR1C1 = "=DAY(RC[-13])"
-    ws.Range("P2:P" & lastRow).FormulaR1C1 = "=MONTH(RC[-14])"
-    ws.Range("Q2:Q" & lastRow).FormulaR1C1 = "=YEAR(RC[-15])"
-
-    ws.Range("O2:Q" & lastRow).Value = ws.Range("O2:Q" & lastRow).Value
-    ws.Range("O2:Q" & lastRow).ClearContents
-End Sub
-
-Sub MergeSameIncidents()
-    Dim ws As Worksheet
-    Set ws = Sheets("Formatted")
-    Dim lastRow As Long, i As Long
-    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
-
-    Dim startRow As Long, endRow As Long
-    startRow = 2
-
-    For i = 2 To lastRow
-        If ws.Cells(i, 1).Value <> ws.Cells(startRow, 1).Value Then
-            endRow = i - 1
-            Mergintons ws, startRow, endRow
-            startRow = i
-        End If
-    Next i
-
-    Mergintons ws, startRow, lastRow
-End Sub
-
-Sub Mergintons(ws As Worksheet, startRow As Long, endRow As Long)
-    Dim cols As Variant, col As Variant
-    cols = Array("A", "B", "C")
-
-    For Each col In cols
-        With ws.Range(col & startRow & ":" & col & endRow)
-            .HorizontalAlignment = xlCenter
-            .VerticalAlignment = xlCenter
-            .Merge
-        End With
-    Next col
-End Sub
-
-Sub EvaluateRagStatus()
-    Dim ws As Worksheet
-    Set ws = Sheets("Formatted")
-    Dim lastRow As Long, i As Long
-    lastRow = ws.Cells(ws.Rows.Count, "E").End(xlUp).Row
-
-    For i = 2 To lastRow
-        If Left(ws.Cells(i, 5).Value, 4) = "Open" Then
-            Dim cell As Range
-            Set cell = ws.Range("D" & i & ":M" & i)
-            
-            Select Case ws.Cells(i, 11).Value
-                Case "Green"
-                    cell.Style = "Good"
-                Case "Amber"
-                    cell.Style = "Neutral"
-                Case "Red"
-                    cell.Style = "Bad"
-            End Select
-        End If
-    Next i
-
-    ws.Columns("K:K").Delete Shift:=xlToLeft
-End Sub
-
 Sub Sorting()
-    With Sheets("Formatted")
-        .Cells.Sort key1:=.Range("M2:M5001"), order1:=xlAscending, _
-                    key2:=.Range("A2:A5001"), order2:=xlAscending, _
-                    key3:=.Range("N2:N5001"), order3:=xlAscending, _
-                    key4:=.Range("O2:O5001"), order4:=xlAscending, _
-                    key5:=.Range("P2:P5001"), order5:=xlAscending, _
-                    Header:=xlYes
-        .Columns("M:P").Delete Shift:=xlToLeft
+'
+' Sorting Macro
+'
+
+'
+    Cells.Select
+    ActiveWorkbook.Worksheets("Formatted").Sort.SortFields.Clear
+    ActiveWorkbook.Worksheets("Formatted").Sort.SortFields.Add2 Key:=Range( _
+        "M2:M5001"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
+        xlSortNormal
+    ActiveWorkbook.Worksheets("Formatted").Sort.SortFields.Add2 Key:=Range( _
+        "A2:A5001"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
+        xlSortNormal
+    ActiveWorkbook.Worksheets("Formatted").Sort.SortFields.Add2 Key:=Range( _
+        "N2:N5001"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
+        xlSortNormal
+    ActiveWorkbook.Worksheets("Formatted").Sort.SortFields.Add2 Key:=Range( _
+        "O2:O5001"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
+        xlSortNormal
+    ActiveWorkbook.Worksheets("Formatted").Sort.SortFields.Add2 Key:=Range( _
+        "P2:P5001"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
+        xlSortNormal
+    ActiveWorkbook.Worksheets("Formatted").Sort.SortFields.Add(Range("L2:L5001"), _
+        xlSortOnCellColor, xlAscending, , xlSortNormal).SortOnValue.Color = RGB(255, _
+        199, 206)
+    ActiveWorkbook.Worksheets("Formatted").Sort.SortFields.Add(Range("L2:L5001"), _
+        xlSortOnCellColor, xlDescending, , xlSortNormal).SortOnValue.Color = RGB(198, _
+        239, 206)
+    With ActiveWorkbook.Worksheets("Formatted").Sort
+        .SetRange Range("A1:ES5001")
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
     End With
+    ActiveWindow.SmallScroll Down:=15
+    Columns("M:P").Select
+    Selection.Delete Shift:=xlToLeft
+
 End Sub
