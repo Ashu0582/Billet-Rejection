@@ -1,111 +1,109 @@
-function formatGTSSheet() {
-  startDeleteCopyPaste();
-  evaluateRagStatus();
-  sorting();
-  mergeSameIncidents();
-}
+Attribute VB_Name = "Module1"
 
-function startDeleteCopyPaste() {
-  var sheetFormatted = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Formatted');
-  var sheetRaw = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Raw');
-  
-  sheetFormatted.clear();
-  
-  var rangeRaw = sheetRaw.getDataRange();
-  rangeRaw.copyTo(sheetFormatted.getRange(1, 1));
-  
-  sheetFormatted.deleteColumn(4); // Delete column D
-  
-  dateConvert();
-}
+Sub FormatGTSSheet()
+    StartDeleteCopyPaste
+    EvaluateRagStatus
+    Sorting
+    MergeSameIncidents
+    Range("A1").Select
+End Sub
 
-function dateConvert() {
-  var sheetFormatted = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Formatted');
-  
-  sheetFormatted.getRange('N1').setValue('Idate');
-  sheetFormatted.getRange('O1').setValue('AID');
-  sheetFormatted.getRange('P1').setValue('ACD');
-  sheetFormatted.getRange('Q1').setValue('Status');
-  
-  var lastRow = sheetFormatted.getLastRow();
-  
-  for (var i = 2; i <= lastRow; i++) {
-    sheetFormatted.getRange('O' + i).setFormula('=DAY(A' + i + ')');
-    sheetFormatted.getRange('P' + i).setFormula('=MONTH(A' + i + ')');
-    sheetFormatted.getRange('Q' + i).setFormula('=YEAR(A' + i + ')');
-    sheetFormatted.getRange('N' + i).setFormula('=DATE(Q' + i + ', P' + i + ', O' + i + ')');
-  }
-  
-  var rangeToCopy = sheetFormatted.getRange('N2:Q' + lastRow);
-  rangeToCopy.copyTo(rangeToCopy, { contentsOnly: true });
-  
-  sheetFormatted.getRange('O2:R' + lastRow).clearContent();
-}
+Sub StartDeleteCopyPaste()
+    With Sheets("Formatted")
+        .Cells.Clear
+        Sheets("Raw").Cells.Copy .Range("A1")
+        .Columns("D:D").Delete Shift:=xlToLeft
+        DateConvert
+    End With
+End Sub
 
-function mergeSameIncidents() {
-  var sheetFormatted = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Formatted');
-  var lastRow = sheetFormatted.getLastRow();
-  var startRangeRow = 2;
-  var saveTicketNo = sheetFormatted.getRange('A2').getValue();
-  
-  for (var i = 2; i <= lastRow; i++) {
-    var checkTicketNo = sheetFormatted.getRange('A' + i).getValue();
-    
-    if (checkTicketNo !== saveTicketNo) {
-      var endRangeRow = i - 1;
-      mergintons(sheetFormatted, startRangeRow, endRangeRow);
-      startRangeRow = i;
-      saveTicketNo = checkTicketNo;
-    }
-  }
-  
-  mergintons(sheetFormatted, startRangeRow, lastRow);
-}
+Sub DateConvert()
+    Dim ws As Worksheet
+    Set ws = Sheets("Formatted")
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
 
-function mergintons(sheet, startRangeRow, endRangeRow) {
-  var rangeStringA = 'A' + startRangeRow + ':A' + endRangeRow;
-  mergeAndCentre(sheet.getRange(rangeStringA));
-  
-  var rangeStringB = 'B' + startRangeRow + ':B' + endRangeRow;
-  mergeAndCentre(sheet.getRange(rangeStringB));
-  
-  var rangeStringC = 'C' + startRangeRow + ':C' + endRangeRow;
-  mergeAndCentre(sheet.getRange(rangeStringC));
-}
+    ws.Range("N1:Q1").Value = Array("Idate", "AID", "ACD", "Status")
 
-function mergeAndCentre(range) {
-  range.merge();
-  range.setHorizontalAlignment('center');
-  range.setVerticalAlignment('middle');
-}
+    With ws.Range("N2:N" & lastRow)
+        .FormulaR1C1 = "=DATE(YEAR(RC[-15]), MONTH(RC[-14]), DAY(RC[-13]))"
+        .Value = .Value
+    End With
 
-function evaluateRagStatus() {
-  var sheetFormatted = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Formatted');
-  var lastRow = sheetFormatted.getLastRow();
-  
-  for (var i = 2; i <= lastRow; i++) {
-    if (sheetFormatted.getRange('E' + i).getValue().startsWith('Open')) {
-      var rangeString = 'D' + i + ':M' + i;
-      var status = sheetFormatted.getRange('K' + i).getValue();
-      
-      if (status === 'Green') {
-        sheetFormatted.getRange(rangeString).setBackground('#00FF00'); // Good
-      } else if (status === 'Amber') {
-        sheetFormatted.getRange(rangeString).setBackground('#FFFF00'); // Neutral
-      } else if (status === 'Red') {
-        sheetFormatted.getRange(rangeString).setBackground('#FF0000'); // Bad
-      }
-    }
-  }
-  
-  sheetFormatted.deleteColumn(11); // Delete column K
-}
+    ws.Range("O2:O" & lastRow).FormulaR1C1 = "=DAY(RC[-13])"
+    ws.Range("P2:P" & lastRow).FormulaR1C1 = "=MONTH(RC[-14])"
+    ws.Range("Q2:Q" & lastRow).FormulaR1C1 = "=YEAR(RC[-15])"
 
-function sorting() {
-  var sheetFormatted = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Formatted');
-  var range = sheetFormatted.getRange('A1:ES' + sheetFormatted.getLastRow());
-  
-  range.sort([{ column: 13, ascending: true }, { column: 1, ascending: true }, { column: 14, ascending: true }, { column: 15, ascending: true }, { column: 16, ascending: true }]);
-  
-  sheetFormatted.deleteColumns(13, 4); // Delete columns M:P
-}
+    ws.Range("O2:Q" & lastRow).Value = ws.Range("O2:Q" & lastRow).Value
+    ws.Range("O2:Q" & lastRow).ClearContents
+End Sub
+
+Sub MergeSameIncidents()
+    Dim ws As Worksheet
+    Set ws = Sheets("Formatted")
+    Dim lastRow As Long, i As Long
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+
+    Dim startRow As Long, endRow As Long
+    startRow = 2
+
+    For i = 2 To lastRow
+        If ws.Cells(i, 1).Value <> ws.Cells(startRow, 1).Value Then
+            endRow = i - 1
+            Mergintons ws, startRow, endRow
+            startRow = i
+        End If
+    Next i
+
+    Mergintons ws, startRow, lastRow
+End Sub
+
+Sub Mergintons(ws As Worksheet, startRow As Long, endRow As Long)
+    Dim cols As Variant, col As Variant
+    cols = Array("A", "B", "C")
+
+    For Each col In cols
+        With ws.Range(col & startRow & ":" & col & endRow)
+            .HorizontalAlignment = xlCenter
+            .VerticalAlignment = xlCenter
+            .Merge
+        End With
+    Next col
+End Sub
+
+Sub EvaluateRagStatus()
+    Dim ws As Worksheet
+    Set ws = Sheets("Formatted")
+    Dim lastRow As Long, i As Long
+    lastRow = ws.Cells(ws.Rows.Count, "E").End(xlUp).Row
+
+    For i = 2 To lastRow
+        If Left(ws.Cells(i, 5).Value, 4) = "Open" Then
+            Dim cell As Range
+            Set cell = ws.Range("D" & i & ":M" & i)
+            
+            Select Case ws.Cells(i, 11).Value
+                Case "Green"
+                    cell.Style = "Good"
+                Case "Amber"
+                    cell.Style = "Neutral"
+                Case "Red"
+                    cell.Style = "Bad"
+            End Select
+        End If
+    Next i
+
+    ws.Columns("K:K").Delete Shift:=xlToLeft
+End Sub
+
+Sub Sorting()
+    With Sheets("Formatted")
+        .Cells.Sort key1:=.Range("M2:M5001"), order1:=xlAscending, _
+                    key2:=.Range("A2:A5001"), order2:=xlAscending, _
+                    key3:=.Range("N2:N5001"), order3:=xlAscending, _
+                    key4:=.Range("O2:O5001"), order4:=xlAscending, _
+                    key5:=.Range("P2:P5001"), order5:=xlAscending, _
+                    Header:=xlYes
+        .Columns("M:P").Delete Shift:=xlToLeft
+    End With
+End Sub
