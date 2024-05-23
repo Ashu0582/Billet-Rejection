@@ -1,88 +1,73 @@
-Sub FormatSheet()
+Sub FormatData()
+
     Dim wsRaw As Worksheet
     Dim wsFormatted As Worksheet
-    Dim lastRow As Long
-    Dim i As Long, j As Long
-    Dim startRow As Long
-    Dim endRow As Long
+    Dim lastRow As Long, i As Long
+    Dim colorValue As String
     
-    ' Set worksheets
+    ' Set the worksheet variables
     Set wsRaw = ThisWorkbook.Sheets("Raw")
     Set wsFormatted = ThisWorkbook.Sheets("Formatted")
     
-    ' Clear Formatted sheet
+    ' Clear the Formatted sheet
     wsFormatted.Cells.Clear
-    
-    ' Copy data from Raw to Formatted
+
+    ' Copy data from Raw to Formatted sheet
     wsRaw.Cells.Copy Destination:=wsFormatted.Cells
     
     ' Delete column D from Formatted sheet
     wsFormatted.Columns("D").Delete
     
-    ' Get the last row
+    ' Find the last row in the Formatted sheet
     lastRow = wsFormatted.Cells(wsFormatted.Rows.Count, "A").End(xlUp).Row
     
-    ' Color rows based on values in column J (originally K before deletion)
-    For i = 2 To lastRow
-        Select Case wsFormatted.Cells(i, "J").Value
+    ' Color rows based on column K value
+    For i = 2 To lastRow ' Assuming the first row is headers
+        colorValue = wsFormatted.Cells(i, 10).Value ' Column K
+        
+        Select Case colorValue
             Case "Red"
-                wsFormatted.Range(wsFormatted.Cells(i, "D"), wsFormatted.Cells(i, "K")).Interior.Color = RGB(255, 0, 0)
+                wsFormatted.Range(wsFormatted.Cells(i, 4), wsFormatted.Cells(i, 12)).Interior.Color = RGB(255, 0, 0) ' Red
             Case "Amber"
-                wsFormatted.Range(wsFormatted.Cells(i, "D"), wsFormatted.Cells(i, "K")).Interior.Color = RGB(255, 191, 0)
+                wsFormatted.Range(wsFormatted.Cells(i, 4), wsFormatted.Cells(i, 12)).Interior.Color = RGB(255, 191, 0) ' Amber
             Case "Green"
-                wsFormatted.Range(wsFormatted.Cells(i, "D"), wsFormatted.Cells(i, "K")).Interior.Color = RGB(0, 255, 0)
+                wsFormatted.Range(wsFormatted.Cells(i, 4), wsFormatted.Cells(i, 12)).Interior.Color = RGB(0, 255, 0) ' Green
         End Select
     Next i
     
-    ' Sort by Incident number (Column A) and Color (Column J)
+    ' Sort by Incident Number (column A) and then by color (column K)
     With wsFormatted.Sort
         .SortFields.Clear
-        .SortFields.Add Key:=wsFormatted.Range("A2:A" & lastRow), Order:=xlAscending
-        .SortFields.Add Key:=wsFormatted.Range("J2:J" & lastRow), Order:=xlAscending, CustomOrder:="Red,Amber,Green"
-        .SetRange wsFormatted.Range("A1:K" & lastRow)
+        .SortFields.Add Key:=Range("A2:A" & lastRow), Order:=xlAscending
+        .SortFields.Add Key:=Range("K2:K" & lastRow), Order:=xlDescending, CustomOrder:="Red,Amber,Green"
+        .SetRange Range("A1:L" & lastRow)
         .Header = xlYes
         .Apply
     End With
     
-    ' Merge and center align columns A, B, and C for same incidents
-    i = 2
-    Do While i <= lastRow
-        startRow = i
-        
-        ' Find the last row of the same incident
-        Do While i <= lastRow And wsFormatted.Cells(i, "A").Value = wsFormatted.Cells(startRow, "A").Value
-            i = i + 1
-        Loop
-        
-        endRow = i - 1
-        
-        If endRow > startRow Then
-            ' Ensure upper-left value is kept and others are cleared before merging
-            For j = startRow + 1 To endRow
-                wsFormatted.Cells(j, "A").ClearContents
-                wsFormatted.Cells(j, "B").ClearContents
-                wsFormatted.Cells(j, "C").ClearContents
-            Next j
-            
-            ' Merge and center align
-            With wsFormatted
-                .Range(.Cells(startRow, "A"), .Cells(endRow, "A")).Merge
-                .Range(.Cells(startRow, "B"), .Cells(endRow, "B")).Merge
-                .Range(.Cells(startRow, "C"), .Cells(endRow, "C")).Merge
-                .Cells(startRow, "A").HorizontalAlignment = xlCenter
-                .Cells(startRow, "B").HorizontalAlignment = xlCenter
-                .Cells(startRow, "C").HorizontalAlignment = xlCenter
-            End With
+    ' Merge cells in columns A, B, and C for the same incidents
+    On Error Resume Next ' Enable error handling
+    
+    For i = 2 To lastRow
+        If wsFormatted.Cells(i, 1).Value = wsFormatted.Cells(i + 1, 1).Value Then
+            wsFormatted.Range(wsFormatted.Cells(i, 1), wsFormatted.Cells(i + 1, 1)).Merge
+            wsFormatted.Range(wsFormatted.Cells(i, 2), wsFormatted.Cells(i + 1, 2)).Merge
+            wsFormatted.Range(wsFormatted.Cells(i, 3), wsFormatted.Cells(i + 1, 3)).Merge
+            wsFormatted.Range(wsFormatted.Cells(i, 1), wsFormatted.Cells(i + 1, 3)).HorizontalAlignment = xlCenter
         End If
-    Loop
+    Next i
     
-    ' Sort by Incident Date (Column B)
+    On Error GoTo 0 ' Disable error handling
+    
+    ' Sort by Incident Date (column B) after merging cells
     With wsFormatted.Sort
         .SortFields.Clear
-        .SortFields.Add Key:=wsFormatted.Range("B2:B" & lastRow), Order:=xlAscending
-        .SetRange wsFormatted.Range("A1:K" & lastRow)
+        .SortFields.Add Key:=Range("B2:B" & lastRow), Order:=xlAscending
+        .SetRange Range("A1:L" & lastRow)
         .Header = xlYes
         .Apply
     End With
     
+    MsgBox "Formatting complete.", vbInformation
+
 End Sub
