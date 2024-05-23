@@ -2,8 +2,10 @@ Sub FormatSheet()
     Dim wsRaw As Worksheet
     Dim wsFormatted As Worksheet
     Dim lastRow As Long
-    Dim i As Long
-
+    Dim i As Long, j As Long
+    Dim startRow As Long
+    Dim endRow As Long
+    
     ' Set worksheets
     Set wsRaw = ThisWorkbook.Sheets("Raw")
     Set wsFormatted = ThisWorkbook.Sheets("Formatted")
@@ -45,7 +47,6 @@ Sub FormatSheet()
     ' Merge and center align columns A, B, and C for same incidents
     i = 2
     Do While i <= lastRow
-        Dim startRow As Long
         startRow = i
         
         ' Find the last row of the same incident
@@ -53,19 +54,25 @@ Sub FormatSheet()
             i = i + 1
         Loop
         
-        If i - startRow > 1 Then
-            ' Ensure upper-left value is kept
-            wsFormatted.Cells(startRow, "A").Value = wsFormatted.Cells(startRow, "A").Value
-            wsFormatted.Cells(startRow, "B").Value = wsFormatted.Cells(startRow, "B").Value
-            wsFormatted.Cells(startRow, "C").Value = wsFormatted.Cells(startRow, "C").Value
+        endRow = i - 1
+        
+        If endRow > startRow Then
+            ' Ensure upper-left value is kept and others are cleared before merging
+            For j = startRow + 1 To endRow
+                wsFormatted.Cells(j, "A").ClearContents
+                wsFormatted.Cells(j, "B").ClearContents
+                wsFormatted.Cells(j, "C").ClearContents
+            Next j
             
             ' Merge and center align
-            wsFormatted.Range(wsFormatted.Cells(startRow, "A"), wsFormatted.Cells(i - 1, "A")).Merge
-            wsFormatted.Range(wsFormatted.Cells(startRow, "B"), wsFormatted.Cells(i - 1, "B")).Merge
-            wsFormatted.Range(wsFormatted.Cells(startRow, "C"), wsFormatted.Cells(i - 1, "C")).Merge
-            wsFormatted.Cells(startRow, "A").HorizontalAlignment = xlCenter
-            wsFormatted.Cells(startRow, "B").HorizontalAlignment = xlCenter
-            wsFormatted.Cells(startRow, "C").HorizontalAlignment = xlCenter
+            With wsFormatted
+                .Range(.Cells(startRow, "A"), .Cells(endRow, "A")).Merge
+                .Range(.Cells(startRow, "B"), .Cells(endRow, "B")).Merge
+                .Range(.Cells(startRow, "C"), .Cells(endRow, "C")).Merge
+                .Cells(startRow, "A").HorizontalAlignment = xlCenter
+                .Cells(startRow, "B").HorizontalAlignment = xlCenter
+                .Cells(startRow, "C").HorizontalAlignment = xlCenter
+            End With
         End If
     Loop
     
