@@ -2,7 +2,6 @@ Sub FormatSheet()
     Dim wsRaw As Worksheet
     Dim wsFormatted As Worksheet
     Dim lastRow As Long
-    Dim lastCol As Long
     Dim i As Long
 
     ' Set worksheets
@@ -18,28 +17,27 @@ Sub FormatSheet()
     ' Delete column D from Formatted sheet
     wsFormatted.Columns("D").Delete
     
-    ' Get the last row and last column
+    ' Get the last row
     lastRow = wsFormatted.Cells(wsFormatted.Rows.Count, "A").End(xlUp).Row
-    lastCol = wsFormatted.Cells(1, wsFormatted.Columns.Count).End(xlToLeft).Column
     
-    ' Color rows based on values in column K
+    ' Color rows based on values in column J (originally K before deletion)
     For i = 2 To lastRow
-        Select Case wsFormatted.Cells(i, "K").Value
+        Select Case wsFormatted.Cells(i, "J").Value
             Case "Red"
-                wsFormatted.Range(wsFormatted.Cells(i, "D"), wsFormatted.Cells(i, "L")).Interior.Color = RGB(255, 0, 0)
+                wsFormatted.Range(wsFormatted.Cells(i, "D"), wsFormatted.Cells(i, "K")).Interior.Color = RGB(255, 0, 0)
             Case "Amber"
-                wsFormatted.Range(wsFormatted.Cells(i, "D"), wsFormatted.Cells(i, "L")).Interior.Color = RGB(255, 191, 0)
+                wsFormatted.Range(wsFormatted.Cells(i, "D"), wsFormatted.Cells(i, "K")).Interior.Color = RGB(255, 191, 0)
             Case "Green"
-                wsFormatted.Range(wsFormatted.Cells(i, "D"), wsFormatted.Cells(i, "L")).Interior.Color = RGB(0, 255, 0)
+                wsFormatted.Range(wsFormatted.Cells(i, "D"), wsFormatted.Cells(i, "K")).Interior.Color = RGB(0, 255, 0)
         End Select
     Next i
     
-    ' Sort by Incident number (Column A) and Color (Column K)
+    ' Sort by Incident number (Column A) and Color (Column J)
     With wsFormatted.Sort
         .SortFields.Clear
         .SortFields.Add Key:=wsFormatted.Range("A2:A" & lastRow), Order:=xlAscending
-        .SortFields.Add Key:=wsFormatted.Range("K2:K" & lastRow), Order:=xlAscending, CustomOrder:="Red,Amber,Green"
-        .SetRange wsFormatted.Range("A1:L" & lastRow)
+        .SortFields.Add Key:=wsFormatted.Range("J2:J" & lastRow), Order:=xlAscending, CustomOrder:="Red,Amber,Green"
+        .SetRange wsFormatted.Range("A1:K" & lastRow)
         .Header = xlYes
         .Apply
     End With
@@ -56,6 +54,12 @@ Sub FormatSheet()
         Loop
         
         If i - startRow > 1 Then
+            ' Ensure upper-left value is kept
+            wsFormatted.Cells(startRow, "A").Value = wsFormatted.Cells(startRow, "A").Value
+            wsFormatted.Cells(startRow, "B").Value = wsFormatted.Cells(startRow, "B").Value
+            wsFormatted.Cells(startRow, "C").Value = wsFormatted.Cells(startRow, "C").Value
+            
+            ' Merge and center align
             wsFormatted.Range(wsFormatted.Cells(startRow, "A"), wsFormatted.Cells(i - 1, "A")).Merge
             wsFormatted.Range(wsFormatted.Cells(startRow, "B"), wsFormatted.Cells(i - 1, "B")).Merge
             wsFormatted.Range(wsFormatted.Cells(startRow, "C"), wsFormatted.Cells(i - 1, "C")).Merge
@@ -69,7 +73,7 @@ Sub FormatSheet()
     With wsFormatted.Sort
         .SortFields.Clear
         .SortFields.Add Key:=wsFormatted.Range("B2:B" & lastRow), Order:=xlAscending
-        .SetRange wsFormatted.Range("A1:L" & lastRow)
+        .SetRange wsFormatted.Range("A1:K" & lastRow)
         .Header = xlYes
         .Apply
     End With
