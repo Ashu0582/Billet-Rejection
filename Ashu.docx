@@ -1,42 +1,24 @@
-Sub Sorting()
-'
-' Sorting Macro
-'
+function sortSheet() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Formatted');
+  if (!sheet) {
+    Logger.log("Sheet 'Formatted' not found");
+    return;
+  }
 
-'
-    Cells.Select
-    ActiveWorkbook.Worksheets("Formatted").Sort.SortFields.Clear
-    ActiveWorkbook.Worksheets("Formatted").Sort.SortFields.Add2 Key:=Range( _
-        "M2:M5001"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
-        xlSortNormal
-    ActiveWorkbook.Worksheets("Formatted").Sort.SortFields.Add2 Key:=Range( _
-        "A2:A5001"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
-        xlSortNormal
-    ActiveWorkbook.Worksheets("Formatted").Sort.SortFields.Add2 Key:=Range( _
-        "N2:N5001"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
-        xlSortNormal
-    ActiveWorkbook.Worksheets("Formatted").Sort.SortFields.Add2 Key:=Range( _
-        "O2:O5001"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
-        xlSortNormal
-    ActiveWorkbook.Worksheets("Formatted").Sort.SortFields.Add2 Key:=Range( _
-        "P2:P5001"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
-        xlSortNormal
-    ActiveWorkbook.Worksheets("Formatted").Sort.SortFields.Add(Range("L2:L5001"), _
-        xlSortOnCellColor, xlAscending, , xlSortNormal).SortOnValue.Color = RGB(255, _
-        199, 206)
-    ActiveWorkbook.Worksheets("Formatted").Sort.SortFields.Add(Range("L2:L5001"), _
-        xlSortOnCellColor, xlDescending, , xlSortNormal).SortOnValue.Color = RGB(198, _
-        239, 206)
-    With ActiveWorkbook.Worksheets("Formatted").Sort
-        .SetRange Range("A1:ES5001")
-        .Header = xlYes
-        .MatchCase = False
-        .Orientation = xlTopToBottom
-        .SortMethod = xlPinYin
-        .Apply
-    End With
-    ActiveWindow.SmallScroll Down:=15
-    Columns("M:P").Select
-    Selection.Delete Shift:=xlToLeft
+  var range = sheet.getRange('A1:ES5001');
+  var sortSpecs = [
+    {column: 13, ascending: true}, // Column M (13th column)
+    {column: 1, ascending: true},  // Column A (1st column)
+    {column: 14, ascending: true}, // Column N (14th column)
+    {column: 15, ascending: true}, // Column O (15th column)
+    {column: 16, ascending: true}, // Column P (16th column)
+  ];
 
-End Sub
+  range.sort(sortSpecs);
+
+  // Sorting by cell color is not natively supported in Google Sheets via Apps Script.
+  // We would need a custom function for that, which is not straightforward.
+
+  // Delete columns M to P
+  sheet.deleteColumns(13, 4);
+}
