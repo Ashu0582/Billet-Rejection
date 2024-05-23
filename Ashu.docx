@@ -1,24 +1,77 @@
-function sortSheet() {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Formatted');
-  if (!sheet) {
-    Logger.log("Sheet 'Formatted' not found");
-    return;
-  }
+Sub FormatSheet()
+    Dim wsRaw As Worksheet
+    Dim wsFormatted As Worksheet
+    Dim lastRow As Long
+    Dim lastCol As Long
+    Dim i As Long
 
-  var range = sheet.getRange('A1:ES5001');
-  var sortSpecs = [
-    {column: 13, ascending: true}, // Column M (13th column)
-    {column: 1, ascending: true},  // Column A (1st column)
-    {column: 14, ascending: true}, // Column N (14th column)
-    {column: 15, ascending: true}, // Column O (15th column)
-    {column: 16, ascending: true}, // Column P (16th column)
-  ];
-
-  range.sort(sortSpecs);
-
-  // Sorting by cell color is not natively supported in Google Sheets via Apps Script.
-  // We would need a custom function for that, which is not straightforward.
-
-  // Delete columns M to P
-  sheet.deleteColumns(13, 4);
-}
+    ' Set worksheets
+    Set wsRaw = ThisWorkbook.Sheets("Raw")
+    Set wsFormatted = ThisWorkbook.Sheets("Formatted")
+    
+    ' Clear Formatted sheet
+    wsFormatted.Cells.Clear
+    
+    ' Copy data from Raw to Formatted
+    wsRaw.Cells.Copy Destination:=wsFormatted.Cells
+    
+    ' Delete column D from Formatted sheet
+    wsFormatted.Columns("D").Delete
+    
+    ' Get the last row and last column
+    lastRow = wsFormatted.Cells(wsFormatted.Rows.Count, "A").End(xlUp).Row
+    lastCol = wsFormatted.Cells(1, wsFormatted.Columns.Count).End(xlToLeft).Column
+    
+    ' Color rows based on values in column K
+    For i = 2 To lastRow
+        Select Case wsFormatted.Cells(i, "K").Value
+            Case "Red"
+                wsFormatted.Range(wsFormatted.Cells(i, "D"), wsFormatted.Cells(i, "L")).Interior.Color = RGB(255, 0, 0)
+            Case "Amber"
+                wsFormatted.Range(wsFormatted.Cells(i, "D"), wsFormatted.Cells(i, "L")).Interior.Color = RGB(255, 191, 0)
+            Case "Green"
+                wsFormatted.Range(wsFormatted.Cells(i, "D"), wsFormatted.Cells(i, "L")).Interior.Color = RGB(0, 255, 0)
+        End Select
+    Next i
+    
+    ' Sort by Incident number (Column A) and Color (Column K)
+    With wsFormatted.Sort
+        .SortFields.Clear
+        .SortFields.Add Key:=wsFormatted.Range("A2:A" & lastRow), Order:=xlAscending
+        .SortFields.Add Key:=wsFormatted.Range("K2:K" & lastRow), Order:=xlAscending, CustomOrder:="Red,Amber,Green"
+        .SetRange wsFormatted.Range("A1:L" & lastRow)
+        .Header = xlYes
+        .Apply
+    End With
+    
+    ' Merge and center align columns A, B, and C for same incidents
+    i = 2
+    Do While i <= lastRow
+        Dim startRow As Long
+        startRow = i
+        
+        ' Find the last row of the same incident
+        Do While i <= lastRow And wsFormatted.Cells(i, "A").Value = wsFormatted.Cells(startRow, "A").Value
+            i = i + 1
+        Loop
+        
+        If i - startRow > 1 Then
+            wsFormatted.Range(wsFormatted.Cells(startRow, "A"), wsFormatted.Cells(i - 1, "A")).Merge
+            wsFormatted.Range(wsFormatted.Cells(startRow, "B"), wsFormatted.Cells(i - 1, "B")).Merge
+            wsFormatted.Range(wsFormatted.Cells(startRow, "C"), wsFormatted.Cells(i - 1, "C")).Merge
+            wsFormatted.Cells(startRow, "A").HorizontalAlignment = xlCenter
+            wsFormatted.Cells(startRow, "B").HorizontalAlignment = xlCenter
+            wsFormatted.Cells(startRow, "C").HorizontalAlignment = xlCenter
+        End If
+    Loop
+    
+    ' Sort by Incident Date (Column B)
+    With wsFormatted.Sort
+        .SortFields.Clear
+        .SortFields.Add Key:=wsFormatted.Range("B2:B" & lastRow), Order:=xlAscending
+        .SetRange wsFormatted.Range("A1:L" & lastRow)
+        .Header = xlYes
+        .Apply
+    End With
+    
+End Sub
